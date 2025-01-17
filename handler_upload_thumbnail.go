@@ -67,19 +67,11 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusUnauthorized, "Unauthed", err)
 		return
 	}
-	// t := thumbnail{
-	// 	mediaType: mt,
-	// 	data:      readData,
-	// }
-	// videoThumbnails[videoID] = t
-
-	// s := fmt.Sprintf("http://localhost:%v/api/thumbnails/%v", cfg.port, videoID)
 
 	vidResp.ThumbnailURL = &dURL
 
 	err = cfg.db.UpdateVideo(vidResp)
 	if err != nil {
-		// delete(videoThumbnails, videoID)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update vid", err)
 		return
 	}
