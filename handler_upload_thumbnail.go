@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,6 +54,10 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	imgAsString := base64.StdEncoding.EncodeToString(readData)
+
+	dURL := fmt.Sprintf("data:%s;base64,%s", mt, imgAsString)
+
 	vidResp, err := cfg.db.GetVideo(videoID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't fetch vid id", err)
@@ -62,19 +67,19 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusUnauthorized, "Unauthed", err)
 		return
 	}
-	t := thumbnail{
-		mediaType: mt,
-		data:      readData,
-	}
-	videoThumbnails[videoID] = t
+	// t := thumbnail{
+	// 	mediaType: mt,
+	// 	data:      readData,
+	// }
+	// videoThumbnails[videoID] = t
 
-	s := fmt.Sprintf("http://localhost:%v/api/thumbnails/%v", cfg.port, videoID)
+	// s := fmt.Sprintf("http://localhost:%v/api/thumbnails/%v", cfg.port, videoID)
 
-	vidResp.ThumbnailURL = &s
+	vidResp.ThumbnailURL = &dURL
 
 	err = cfg.db.UpdateVideo(vidResp)
 	if err != nil {
-		delete(videoThumbnails, videoID)
+		// delete(videoThumbnails, videoID)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update vid", err)
 		return
 	}
