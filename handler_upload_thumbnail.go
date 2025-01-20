@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
+	"mime"
 	"net/http"
 	"os"
 
@@ -49,33 +49,27 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	readData, err := io.ReadAll(fileData)
-	if err != nil || readData == nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't read file", err)
+	mimeType, _, err := mime.ParseMediaType(mt)
+	if mimeType != "image/jpeg" && mimeType != "image/png" {
+		respondWithError(w, http.StatusBadRequest, "Incorrect media type", err)
 		return
 	}
 
-	// imgAsString := base64.StdEncoding.EncodeToString(readData)
-
-	extension := mt[6:]
-	log.Print(extension)
-	// filepath := filepath.Join(cfg.assetsRoot, fmt.Sprintf("%s.%s", videoID, extension))
-	filepath := fmt.Sprintf("./assets/%s.%v", videoID, extension)
-	file, err := os.Create(filepath)
+	filepath := getAssetPath(videoID, mt)
+	diskPath := cfg.getAssetDiskPath(filepath)
+	file, err := os.Create(diskPath)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create file", err)
 		return
 	}
-
+	defer file.Close()
 	_, err = io.Copy(file, fileData)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't write to file", err)
 		return
 	}
 
-	// dURL := fmt.Sprintf("data:%s;base64,%s", mt, imgAsString)
-
-	tURL := fmt.Sprintf("http://localhost:%s/assets/%s.%s", cfg.port, videoID, extension)
+	tURL := cfg.getAssetURL(filepath)
 
 	vidResp, err := cfg.db.GetVideo(videoID)
 	if err != nil {
