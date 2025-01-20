@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -30,7 +28,7 @@ func (cfg apiConfig) getAssetURL(assetPath string) string {
 	return fmt.Sprintf("http://localhost:%s/assets/%s", cfg.port, assetPath)
 }
 
-func getAssetPath(vidID uuid.UUID, mt string) string {
+func getAssetPath(thumbnailID, mt string) string {
 	ext := getExtension(mt)
-	return fmt.Sprintf("%s%s", vidID, ext)
+	return fmt.Sprintf("%s%s", thumbnailID, ext)
 }
