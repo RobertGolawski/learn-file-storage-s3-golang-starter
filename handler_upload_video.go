@@ -72,13 +72,25 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	defer os.Remove("temp-tubely.mp4")
+	defer os.Remove(tmp.Name())
 	defer tmp.Close()
 
 	_, err = io.Copy(tmp, vidData)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error copying video", err)
 		return
+	}
+
+	aspectRatio, err := getVideoAspectRatio(tmp.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error getting aspect ratio", err)
+		return
+	}
+
+	if aspectRatio == "16:9" {
+		aspectRatio = "landscape"
+	} else if aspectRatio == "9:16" {
+		aspectRatio = "portrait"
 	}
 
 	b := make([]byte, 32)
@@ -88,7 +100,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	k := hex.EncodeToString(b)
-	fileKey := fmt.Sprintf("%s%s", k, getExtension(mt))
+	fileKey := fmt.Sprintf("%s/%s%s", aspectRatio, k, getExtension(mt))
 	tmp.Seek(0, io.SeekStart)
 
 	putInput := &s3.PutObjectInput{
