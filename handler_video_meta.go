@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
@@ -190,4 +191,18 @@ func getGCF(a, b int) int {
 		return a
 	}
 	return getGCF(b, a%b)
+}
+
+func processVideoForFastStart(filepath string) (string, error) {
+	sections := strings.Split(filepath, ".")
+	s := fmt.Sprintf("%s.processing.%s", sections[0], sections[1])
+
+	c := exec.Command("ffmpeg", "-i", filepath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", s)
+
+	err := c.Run()
+	if err != nil {
+		return "error running vid processing", err
+	}
+
+	return s, nil
 }

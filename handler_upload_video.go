@@ -101,12 +101,25 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	}
 	k := hex.EncodeToString(b)
 	fileKey := fmt.Sprintf("%s/%s%s", aspectRatio, k, getExtension(mt))
-	tmp.Seek(0, io.SeekStart)
+	// tmp.Seek(0, io.SeekStart)
+
+	processed, err := processVideoForFastStart(tmp.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error processing vid", err)
+		return
+	}
+
+	p, err := os.Open(processed)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error opening processed file", err)
+		return
+	}
+	defer p.Close()
 
 	putInput := &s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
 		Key:         aws.String(fileKey),
-		Body:        tmp,
+		Body:        p,
 		ContentType: &mimeType,
 	}
 
